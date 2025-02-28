@@ -1,9 +1,10 @@
 // pages/index.js
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import myProfile from "./assets/profile.png";
 import { IMAGE_KEYS } from "./assets/imagelibrary";
 import { toast, Toaster } from "react-hot-toast";
+import { Menu, X } from "lucide-react";
 
 const experiences = [
   "Software Engineer at GridDynamics - Developed and maintained scalable fintech applications.",
@@ -16,7 +17,6 @@ const experiences = [
 export default function App() {
   const [dynamicWords, setDynamicWords] = useState([
     "Full Stack Developer",
-    "Fintech Application Specialist",
     "React & Spring Boot Expert",
     "Cloud Solutions Explorer",
     "UI/UX Optimization Enthusiast",
@@ -24,6 +24,18 @@ export default function App() {
   ]);
 
   const [isSubmitting, setSubmitting] = useState(false);
+
+  const [activeTooltip, setActiveTooltip] = useState(null);
+
+  const techDescriptions = {
+    spring: "Spring & Spring Boot",
+    react: "React",
+    nextjs: "NextJs",
+    mysql: "MySql",
+    docker: "Docker",
+  };
+
+  const sections = ["Profile", "Technologies", "Experience", "Contact"];
 
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [formData, setFormData] = useState({
@@ -39,7 +51,6 @@ export default function App() {
     }, 3000);
 
     const handleScroll = () => {
-      const sections = ["profile", "technologies", "experience", "contact"];
       sections.forEach((section) => {
         const element = document.getElementById(section);
         if (element) {
@@ -76,12 +87,20 @@ export default function App() {
     });
   };
 
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <div className="!w-full min-h-screen bg-black text-gray-200 p-4">
       {/* Navbar */}
-      <nav className="fixed top-0 left-0 w-full bg-gray-900 shadow-lg z-50 py-3 px-6 flex justify-center space-x-6">
-        {["Profile", "Technologies", "Experience", "Contact"].map(
-          (section, index) => (
+      <nav className="fixed top-0 left-0 w-full bg-gray-900 shadow-lg z-50 py-3 px-6 flex justify-between items-center">
+        {/* Logo or Brand Name */}
+
+        {/* Desktop Navigation */}
+        <div
+          className="hidden md:flex justify-center"
+          style={{ width: "100%", gap: "3.5em" }}
+        >
+          {sections.map((section, index) => (
             <motion.button
               key={section}
               className={`!bg-transparent text-white hover:text-purple-400 cursor-pointer ${
@@ -90,14 +109,49 @@ export default function App() {
                   : ""
               }`}
               onClick={() => handleScrollTo(section.toLowerCase())}
-              initial={{ x: -100, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
               transition={{ delay: index * 0.2, duration: 0.5 }}
             >
               {section}
             </motion.button>
-          )
-        )}
+          ))}
+        </div>
+
+        {/* Mobile Menu Button */}
+        <button
+          className="md:hidden !bg-transparent"
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label="Toggle menu"
+        >
+          {isOpen ? <X size={28} /> : <Menu size={28} />}
+        </button>
+
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {isOpen && (
+            <motion.div
+              className="absolute top-15 left-0 w-full bg-gray-900 shadow-lg flex flex-col space-y-4 p-6 shadow-lg md:hidden"
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {sections.map((section) => (
+                <button
+                  key={section}
+                  className="text-white  !bg-transparent hover:text-purple-400 text-lg"
+                  onClick={() => {
+                    handleScrollTo(section.toLowerCase());
+                    setIsOpen(false); // Close menu on selection
+                  }}
+                >
+                  {section}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {/* Profile Section */}
@@ -140,15 +194,41 @@ export default function App() {
             (tech, index) => (
               <motion.div
                 key={tech}
-                className="bg-gray-800 p-4 rounded-lg shadow-lg flex items-center justify-center"
-                initial={{ y: 100 }}
+                className="relative bg-gray-700 p-4 rounded-lg shadow-lg flex items-center justify-center cursor-pointer hover:bg-purple-500 transition-all duration-300 transform hover:scale-105"
+                onMouseEnter={() => setActiveTooltip(tech)}
+                onMouseLeave={() => setActiveTooltip(null)}
+                initial={{ y: 70 }}
                 whileInView={{ y: 0 }}
                 transition={{
                   delay: index !== 4 ? index * 0.2 : 0.8,
                   duration: 1,
                 }}
               >
-                <img src={IMAGE_KEYS[tech]} alt={tech} className="w-24 h-24" />
+                {/* Tooltip Container */}
+                <div className="relative inline-block">
+                  <motion.img
+                    src={IMAGE_KEYS[tech]}
+                    alt={tech}
+                    className="w-24 h-24"
+                  />
+
+                  {/* Tooltip */}
+                  {activeTooltip === tech && (
+                    <motion.div
+                      className="absolute bottom-[-3rem] left-1/2 transform -translate-x-1/2 bg-gray-800 text-white p-2 rounded-lg shadow-lg z-50 w-30 text-xs"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: -30 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ duration: 0.3 }}
+                      style={{ fontSize: "10px", whiteSpace: "nowrap" }}
+                    >
+                      {techDescriptions[tech]}
+
+                      {/* Tooltip Arrow */}
+                      <div className="absolute top-[-6px] left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-8 border-l-transparent border-b-8 border-b-gray-800 border-r-8 border-r-transparent"></div>
+                    </motion.div>
+                  )}
+                </div>
               </motion.div>
             )
           )}
